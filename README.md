@@ -21,10 +21,10 @@ ________________________________________________________________________________
 - The "[EMPTY]" buttons represnt PC slots.
 - Click on a button to assign a PC to that slot.
 - Assign PC's from your Queue to the buttons that correspond to your setup's relative screen positions.
--- For example:
--- I have a desktop, which will act as the "Host", and a laptop to the left of it.
--- I can choose to assign "This PC" to the middle button.
--- Then I would click the button to the left of "This PC" to assign my laptop to it.
+- For example:
+- I have a desktop, which will act as the "Host", and a laptop to the left of it.
+- I can choose to assign "This PC" to the middle button.
+- Then I would click the button to the left of "This PC" to assign my laptop to it.
 - To get PC's into the Queue run Harmony on a differnt computer.
 - Click "Client (Use another Mouse/ Keyboard)"
 - Type in the IP you took note of in a previous step and press Connect.
