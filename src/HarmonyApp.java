@@ -7,6 +7,7 @@ import java.awt.GraphicsEnvironment;
 import java.awt.GridLayout;
 import java.awt.MouseInfo;
 import java.awt.Point;
+import java.awt.Rectangle;
 import java.awt.Robot;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -17,16 +18,15 @@ import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
-import java.awt.event.MouseMotionListener;
 import java.awt.event.MouseWheelEvent;
 import java.awt.event.MouseWheelListener;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
 import java.awt.event.WindowStateListener;
-import java.awt.geom.Rectangle2D;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
+import java.net.InetSocketAddress;
 import java.net.SocketException;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
@@ -76,10 +76,18 @@ public class HarmonyApp extends JFrame{
 	
 	public String getLocalIPAddress()
     {
-		try(DatagramSocket socket = new DatagramSocket()){
-			  socket.connect(InetAddress.getByName("8.8.8.8"), 65530);
-			  return socket.getLocalAddress().getHostAddress().toString();
-		} catch(Exception e) {
+		try {
+			DatagramSocket socket = new DatagramSocket(null);
+			InetSocketAddress address = new InetSocketAddress(InetAddress.getByName("8.8.8.8"), 65530);
+			socket.connect(address);
+			//socket.bind(address);
+			String ip = socket.getLocalAddress().getHostAddress().toString();
+			socket.close();
+			if(ip.equals("0.0.0.0")) {
+				return getLocalIPAddressBAK();
+			}
+			return ip;
+		} catch(Exception ex) {
 			return getLocalIPAddressBAK();
 		}
     }
@@ -130,19 +138,43 @@ public class HarmonyApp extends JFrame{
 	private boolean isServer = false;
 	private boolean isActivePC = false;
 	
+    private int xMin = 0;
+    private int yMin = 0;
+    private int xMax = 0;
+    private int yMax = 0;
+    private int envWidth = 0;
+    private int envHeight = 0;
+    private int envWidthMidPoint = 0;
+    private int envHeightMidPoint = 0;
+    
+
 	
-    private int screenWidth = -1;
-    private int screenHeight = -1;
+    
+	Point currentMousePoint;
 	HarmonyApp(){
-		Rectangle2D result = new Rectangle2D.Double();
-		GraphicsEnvironment localGE = GraphicsEnvironment.getLocalGraphicsEnvironment();
-		for (GraphicsDevice gd : localGE.getScreenDevices()) {
-		  for (GraphicsConfiguration graphicsConfiguration : gd.getConfigurations()) {
-		    Rectangle2D.union(result, graphicsConfiguration.getBounds(), result);
-		  }
+		GraphicsEnvironment ge = GraphicsEnvironment.getLocalGraphicsEnvironment();
+		GraphicsDevice arrGD[] = ge.getScreenDevices();
+		for(int i=0;i<arrGD.length;i++) {
+			Rectangle r = arrGD[i].getDefaultConfiguration().getBounds();
+			if(r.y<yMin) {
+				yMin = r.y;
+			}
+			if((r.y+r.height)>yMax) {
+				yMax = r.y+r.height;
+			}
+			if(r.x<xMin) {
+				xMin = r.x;
+			}
+			if((r.x+r.width)>xMax) {
+				xMax = r.x+r.width;
+			}
 		}
-		screenWidth = (int)result.getWidth();
-		screenHeight =  (int)result.getHeight();
+
+		envWidthMidPoint = (xMax+xMin)/2;
+		envHeightMidPoint = (yMax+yMin)/2;
+		
+		envWidth = xMax - xMin;
+		envHeight = yMax - yMin;
 		
 		firstPanel = new JPanel();
 		firstPanel.setLayout(new FlowLayout());
@@ -169,7 +201,7 @@ public class HarmonyApp extends JFrame{
 
 		this.setSize(300, 150);
 		this.setResizable(false);
-		this.setLocation(new Point(screenWidth/2, screenHeight/2));
+		this.setLocation(MouseInfo.getPointerInfo().getLocation());
 		this.setTitle("Harmony");
 		this.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		this.validate();
@@ -244,8 +276,11 @@ public class HarmonyApp extends JFrame{
 			server_buttons[i].setEnabled(false);
 			server_button_panel.add(server_buttons[i]);
 		}
-		
-		server_label = new JLabel("Your IP: "+getLocalIPAddress());
+		String tempIP = getLocalIPAddress();
+		while(tempIP.contains("/")) {
+			tempIP = tempIP.substring(tempIP.indexOf('/')+1);
+		}
+		server_label = new JLabel("IP: "+tempIP);
 		server_button_panel.add(server_label);
 		
 		server_side_panel = new JPanel();
@@ -285,6 +320,14 @@ public class HarmonyApp extends JFrame{
 
 	}
 	
+	private float lerp(float min, float max, float lerpAmount) {
+		return min+(max-min)*lerpAmount;
+	}
+	
+	private float invertedLerp(float min, float max, float value) {
+		return (value - min) / (max - min);
+	}
+	
 	private void server_BecomeMain()
     {
         isActivePC = true;
@@ -304,7 +347,7 @@ public class HarmonyApp extends JFrame{
 
         this.setSize(800, 200);
         if(oldPos==null) {
-        	oldPos = new Point(screenWidth/2, screenHeight/2);
+        	oldPos = MouseInfo.getPointerInfo().getLocation();
         }
         this.setLocation(oldPos);
 
@@ -326,34 +369,16 @@ public class HarmonyApp extends JFrame{
 				int yFast = MouseInfo.getPointerInfo().getLocation().y;
 				
 				xMoved = xFast - xPrev;
-				/*if(xFast<xPrev) {
-					xMoved = -1;
-				}
-				else if(xFast>xPrev) {
-					xMoved = 1;
-				}
-				else {
-					xMoved = 0;
-				}*/
 				xPrev = xFast;
 				
 	            yMoved = yFast - yPrev;
-				/*if(yFast<yPrev) {
-					yMoved = -1;
-				}
-				else if(yFast>yPrev) {
-					yMoved = 1;
-				}
-				else {
-					yMoved = 0;
-				}*/
 	            yPrev = yFast;
 	            if (!isActivePC && isServer)
 	            {
-	                xPrev = screenWidth / 2;
-	                yPrev = screenHeight / 2;
+	                xPrev = envWidthMidPoint;
+	                yPrev = envHeightMidPoint;
 	                
-	                r.mouseMove(screenWidth / 2, screenHeight / 2);
+	                r.mouseMove(envWidthMidPoint, envHeightMidPoint);
 
 	                if (!(xMoved == 0 && yMoved == 0))
 	                {
@@ -361,65 +386,65 @@ public class HarmonyApp extends JFrame{
 	                }
 
 	            }
-	            if (xFast <= 2)
+	            if (xFast <= (xMin+2))
 	            {
 	                if (isServer)
 	                {
-	                    if (switchPC(4,((int)((((float)yFast) / (screenHeight)) * 100))))
+	                    if (switchPC(4,(int)(invertedLerp(yMin,yMax,yFast)*100)))
 	                    {
-	                    	r.mouseMove(screenWidth / 2, yFast);
+	                    	r.mouseMove(envWidthMidPoint, yFast);
 	                    }
 	                }
 	                else
 	                {
-	                    sendMessage("w|4|"+((int)((((float)yFast) / (screenHeight)) * 100)), serverIP);
+	                    sendMessage("w|4|"+((int)(invertedLerp(yMin,yMax,yFast)*100)), serverIP);
 	                }
-	                xPrev = screenWidth / 2;
+	                xPrev = envWidthMidPoint;
 	            }
-	            else if (xFast >= (screenWidth-2))
+	            else if (xFast >= (xMax-2))
 	            {
 	                if (isServer)
 	                {
-	                    if (switchPC(2,((int)((((float)yFast) / (screenHeight)) * 100))))
+	                    if (switchPC(2,((int)(invertedLerp(yMin,yMax,yFast)*100))))
 	                    {
-	                    	r.mouseMove(screenWidth / 2, yFast);
+	                    	r.mouseMove(envWidthMidPoint, yFast);
 	                    }
 	                }
 	                else
 	                {
-	                    sendMessage("w|2|"+((int)((((float)yFast) / (screenHeight)) * 100)), serverIP);
+	                    sendMessage("w|2|"+((int)(invertedLerp(yMin,yMax,yFast)*100)), serverIP);
 	                }
-	                xPrev = screenWidth / 2;
+	                xPrev = envWidthMidPoint;
 	            }
-	            else if (yFast <= 2)
+	            else if (yFast <= (yMin+2))
 	            {
 	                if (isServer)
 	                {
-	                    if (switchPC(1,((int)((((float)xFast) / (screenWidth))*100))))
+	                    if (switchPC(1,((int)(invertedLerp(xMin,xMax,xFast)*100))))
 	                    {
-	                    	r.mouseMove(xFast, screenHeight / 2);
+	                    	r.mouseMove(xFast, envHeightMidPoint);
 	                    }
 	                }
 	                else
 	                {
-	                    sendMessage("w|1|"+((int)((((float)xFast) / (screenWidth))*100)), serverIP);
+	                    sendMessage("w|1|"+((int)(invertedLerp(xMin,xMax,xFast)*100)), serverIP);
 	                }
-	                yPrev = screenHeight / 2;
+	                yPrev = envHeightMidPoint;
 	            }
-	            else if (yFast >= (screenHeight-2))
+	            else if (yFast >= (yMax-2))
 	            {
 	                if (isServer)
 	                {
-	                    if (switchPC(3,((int)((((float)xFast) / (screenWidth))*100))))
+	                    if (switchPC(3,((int)(invertedLerp(xMin,xMax,xFast)*100))))
 	                    {
-	                    	r.mouseMove(xFast, screenHeight / 2);
+	                    	r.mouseMove(xFast, envHeightMidPoint);
 	                    }
 	                }
 	                else
 	                {
-	                    sendMessage("w|3|"+((int)((((float)xFast) / (screenWidth))*100)), serverIP);
+	                    sendMessage("w|3|"+((int)(invertedLerp(xMin,xMax,xFast)*100)), serverIP);
 	                }
-	                yPrev = screenHeight / 2;
+	                yPrev = envHeightMidPoint;
 	            }
 	            try {
 					this.sleep(33);
@@ -457,19 +482,19 @@ public class HarmonyApp extends JFrame{
                         String[] sep = clientMessage.split("\\|",-1);
                         if (sep[1].equals("1"))
                         {
-                        	r.mouseMove(((int)((Float.parseFloat(sep[2])/100)*screenWidth)), screenHeight-50);
+                        	r.mouseMove((int)lerp(xMin,xMax,(Float.parseFloat(sep[2])/100)), yMax-50);
                         }
                         else if (sep[1].equals("3"))
                         {
-                        	r.mouseMove(((int)((Float.parseFloat(sep[2]) / 100) * screenWidth)), 50);
+                        	r.mouseMove((int)lerp(xMin,xMax,(Float.parseFloat(sep[2])/100)), yMin+50);
                         }
                         else if(sep[1].equals("2"))
                         {
-                        	r.mouseMove(50, ((int)((Float.parseFloat(sep[2]) / 100) * screenHeight)));
+                        	r.mouseMove(xMin+50, (int)lerp(yMin,yMax,(Float.parseFloat(sep[2])/100)));
                         }
                         else if (sep[1].equals("4"))
                         {
-                        	r.mouseMove(screenWidth-50, ((int)((Float.parseFloat(sep[2]) / 100) * screenHeight)));
+                        	r.mouseMove(xMax-50, (int)lerp(yMin,yMax,(Float.parseFloat(sep[2])/100)));
                         }
                         
                         framePreState = thisFrame.getState();
@@ -490,17 +515,17 @@ public class HarmonyApp extends JFrame{
             			int xFast = MouseInfo.getPointerInfo().getLocation().x;
             			int yFast = MouseInfo.getPointerInfo().getLocation().y;
             			
-            			if(xFast<50) {
-            				r.mouseMove(50, yFast);
+            			if(xFast<(xMin+50)) {
+            				r.mouseMove((xMin+50), yFast);
             			}
-            			else if(xFast> (screenWidth - 50)) {
-            				r.mouseMove((screenWidth - 50), yFast);
+            			else if(xFast> (xMax - 50)) {
+            				r.mouseMove((xMax - 50), yFast);
             			}
-            			if(yFast<50) {
-            				r.mouseMove(xFast, 50);
+            			if(yFast<(yMin+50)) {
+            				r.mouseMove(xFast, (yMin+50));
             			}
-            			else if(yFast > (screenHeight - 50)) {
-            				r.mouseMove(xFast, (screenHeight - 50));
+            			else if(yFast > (yMax - 50)) {
+            				r.mouseMove(xFast, (yMax - 50));
             			}
                     }
                 }
@@ -545,11 +570,19 @@ public class HarmonyApp extends JFrame{
                 }
                 else if (clientMessage.substring(0, 3).equals("kd|"))
                 {
+                	try {
                     r.keyPress(Integer.parseInt(clientMessage.substring(3)));
+                	} catch(Exception ex) {
+                		System.out.println("Invalid: "+clientMessage.substring(3));
+                	}
                 }
                 else if (clientMessage.substring(0, 3).equals("ku|"))
                 {
-                    r.keyRelease(Integer.parseInt(clientMessage.substring(3)));
+                	try {
+                		r.keyRelease(Integer.parseInt(clientMessage.substring(3)));
+	                } catch(Exception ex) {
+	            		System.out.println("Invalid: "+clientMessage.substring(3));
+	            	}
                 }
                 else if (clientMessage.substring(0, 2).equals("w|"))
                 {
@@ -578,10 +611,10 @@ public class HarmonyApp extends JFrame{
         isActivePC = false;
         this.dispose();
         this.setUndecorated(true);
-        this.setOpacity(0.01f);
+        this.setOpacity(0.1f);
         oldPos = this.getLocation();
-        this.setLocation(-10, -10);
-        this.setSize(screenWidth+20, screenHeight+20);
+        this.setLocation(xMin-10, yMin-10);
+        this.setSize(envWidth*2, envHeight*2);
         this.setAlwaysOnTop(true);
         this.setVisible(true);
         if(hwsl == null) {
@@ -777,21 +810,22 @@ public class HarmonyApp extends JFrame{
                 if (currentPC.pc_ip.equals("0"))
                 {
                     server_BecomeMain();
+                   
                     if (i==1)
                     {
-                    	r.mouseMove(((int)((((float)(relPos))/100)*screenWidth)), screenHeight-50);
+                    	r.mouseMove((int)lerp(xMin,xMax,(((float)relPos)/100)), yMax-50);
                     }
                     else if (i==3)
                     {
-                    	r.mouseMove(((int)((((float)(relPos)) / 100) * screenWidth)), 50);
+                    	r.mouseMove((int)lerp(xMin,xMax,(((float)relPos)/100)), yMin+50);
                     }
                     else if(i==2)
                     {
-                    	r.mouseMove(50, ((int)((((float)(relPos)) / 100) * screenHeight)));
+                    	r.mouseMove(xMin+50, (int)lerp(yMin,yMax,((float)relPos)/100));
                     }
                     else if (i==4)
                     {
-                    	r.mouseMove(screenWidth-50, ((int)((((float)(relPos)) / 100) * screenHeight)));
+                    	r.mouseMove(xMax-50, (int)lerp(yMin,yMax,((float)relPos)/100));
                     }
                     
                 }
@@ -827,7 +861,6 @@ public class HarmonyApp extends JFrame{
 				return;
 			}
 			if(isServer) {
-				server_label.setText(""+e.getKeyCode());
 				if(e.getKeyCode()==KeyEvent.VK_ALT) {
 					isAlt++;
 				}
