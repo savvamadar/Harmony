@@ -1,17 +1,17 @@
 # Harmony
 Inspired by Synergy https://symless.com/synergy - https://github.com/symless/synergy-core
 _________________________________________________________________________________________
-#This software is designed to connect one keyboard and mouse to multiple computers.
-#Built with Java 1.8
+# This software is designed to connect one keyboard and mouse to multiple computers.
+# Built with Java 1.8
 
-#Cross Compatible:
+# Cross Compatible:
 - Windows
 - MacOS
 - Linux
 
-#So that you don't have to constantly switch and itnerrupt your work flow.
+# So that you don't have to constantly switch and itnerrupt your work flow.
 
-#Usage:
+# Usage:
 - Download and Install Java 1.8 - https://www.oracle.com/technetwork/java/javase/downloads/jre8-downloads-2133155.html
 - Pick out a PC that you want to use as the Keyboard and Mouse - we will refer to this PC from now on as the "Host"
 - Run Harmoney on the "Host", if you are on MacOS you may need to hold control while opening it if it says something about "unknown developer"
