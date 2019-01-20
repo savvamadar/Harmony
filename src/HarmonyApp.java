@@ -468,7 +468,7 @@ public class HarmonyApp extends JFrame{
             	}
             	else if(pcList.size()>1){
             		for(PC pc_i : pcList) {
-            			if(!pc_i.pc_ip.equals("0") && ((pc_i.dateItem.getTime() - pc_i.lastHeartBeat)>10000)) {
+            			if(!pc_i.pc_ip.equals("0") && ((System.currentTimeMillis() - pc_i.lastHeartBeat)>10000)) {
             				pc_i.isOnline = false;
             			}
             		}
@@ -599,22 +599,6 @@ public class HarmonyApp extends JFrame{
                     String[] sep = clientMessage.split("\\|",-1);
                     r.mouseMove(xFast+Integer.parseInt(sep[1]), yFast + Integer.parseInt(sep[2]));
                 }
-                else if (clientMessage.substring(0, 3).equals("kd|"))
-                {
-                	try {
-                    r.keyPress(Integer.parseInt(clientMessage.substring(3)));
-                	} catch(Exception ex) {
-                		System.out.println("Invalid: "+clientMessage.substring(3));
-                	}
-                }
-                else if (clientMessage.substring(0, 3).equals("ku|"))
-                {
-                	try {
-                		r.keyRelease(Integer.parseInt(clientMessage.substring(3)));
-	                } catch(Exception ex) {
-	            		System.out.println("Invalid: "+clientMessage.substring(3));
-	            	}
-                }
                 else if (clientMessage.substring(0, 2).equals("w|"))
                 {
                     if (isServer)
@@ -630,13 +614,36 @@ public class HarmonyApp extends JFrame{
                 	//receive heartbeat
                     if (isServer)
                     {
-                    	for(int i=0;i<pcList.size();i++) {
+                    	
+                    	for(PC pc_i : pcList) {
+                    		if(msg.IP.contains(pc_i.pc_ip)) {
+                    			//System.out.println("HB: "+pc_i.pc_ip);
+                    			pc_i.setHeartBeat();
+                    		}
+                    	}
+                    	/*for(int i=0;i<pcList.size();i++) {
                     		if(msg.IP.contains(pcList.get(i).pc_ip)) {
                     			pcList.get(i).setHeartBeat();
                     			i = pcList.size();
                     		}
-                    	}
+                    	}*/
                     }
+                }
+                else if (clientMessage.substring(0, 3).equals("kd|"))
+                {
+                	try {
+                    r.keyPress(Integer.parseInt(clientMessage.substring(3)));
+                	} catch(Exception ex) {
+                		System.out.println("Invalid: "+clientMessage.substring(3));
+                	}
+                }
+                else if (clientMessage.substring(0, 3).equals("ku|"))
+                {
+                	try {
+                		r.keyRelease(Integer.parseInt(clientMessage.substring(3)));
+	                } catch(Exception ex) {
+	            		System.out.println("Invalid: "+clientMessage.substring(3));
+	            	}
                 }
             }
             System.exit(0);
