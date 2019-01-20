@@ -839,22 +839,22 @@ public class HarmonyApp extends JFrame{
             	didSwitch = true;
                 currentPC = pcList.get(0);
             }
-            else if (i == 1 && currentPC.up!=null)
+            else if (i == 1 && currentPC.up!=null && currentPC.up.isOnline)
             {
                 didSwitch = true;
                 currentPC = currentPC.up;
             }
-            else if (i == 2 && currentPC.right != null)
+            else if (i == 2 && currentPC.right != null && currentPC.right.isOnline)
             {
                 didSwitch = true;
                 currentPC = currentPC.right;
             }
-            else if (i == 3 && currentPC.down != null)
+            else if (i == 3 && currentPC.down != null && currentPC.down.isOnline)
             {
                 didSwitch = true;
                 currentPC = currentPC.down;
             }
-            else if (i == 4 && currentPC.left != null)
+            else if (i == 4 && currentPC.left != null && currentPC.left.isOnline)
             {
                 didSwitch = true;
                 currentPC = currentPC.left;
