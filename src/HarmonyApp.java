@@ -237,6 +237,8 @@ public class HarmonyApp extends JFrame{
 		        	client_connect_button.setEnabled(false);
 		        	recvThread = new UDPThread();
 		        	recvThread.start();
+		        	hbThread = new HeartBeatThread();
+		        	hbThread.start();
 		        }
 		        else {
 		        	JOptionPane.showMessageDialog(null,"Received response from unexpected IP.");
@@ -312,6 +314,9 @@ public class HarmonyApp extends JFrame{
 
     	recvThread = new UDPThread();
     	recvThread.start();
+    	
+    	hbThread = new HeartBeatThread();
+    	hbThread.start();
     	
         mThread = new MouseThread();
 		mThread.start();
@@ -455,6 +460,32 @@ public class HarmonyApp extends JFrame{
 		}
 	}
 	
+	class HeartBeatThread extends Thread {
+		public void run() {
+            while(!closeProgram) {
+            	if(!isServer) {
+            		sendMessage("h|", serverIP);
+            	}
+            	else if(pcList.size()>1){
+            		for(PC pc_i : pcList) {
+            			if(!pc_i.pc_ip.equals("0") && ((pc_i.dateItem.getTime() - pc_i.lastHeartBeat)>10000)) {
+            				pc_i.isOnline = false;
+            			}
+            		}
+            		if(currentPC.isOnline==false) {
+            			switchPC(-1,50);
+            		}
+            	}
+            	try {
+					Thread.sleep(5000);
+				} catch (InterruptedException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+            }
+		}
+	}
+	
 	private boolean closeProgram = false;
 	class UDPThread extends Thread {
         UDPMessage msg;
@@ -588,8 +619,23 @@ public class HarmonyApp extends JFrame{
                 {
                     if (isServer)
                     {
-                    	String[] sep = clientMessage.split("\\|",-1);
-                        switchPC(Integer.parseInt(sep[1]), Integer.parseInt(sep[2]));
+                    	if(msg.IP.contains(currentPC.pc_ip)) {
+                    		String[] sep = clientMessage.split("\\|",-1);
+                    		switchPC(Integer.parseInt(sep[1]), Integer.parseInt(sep[2]));
+                    	}
+                    }
+                }
+                else if (clientMessage.substring(0, 2).equals("h|"))
+                {
+                	//receive heartbeat
+                    if (isServer)
+                    {
+                    	for(int i=0;i<pcList.size();i++) {
+                    		if(msg.IP.contains(pcList.get(i).pc_ip)) {
+                    			pcList.get(i).setHeartBeat();
+                    			i = pcList.size();
+                    		}
+                    	}
                     }
                 }
             }
@@ -667,6 +713,7 @@ public class HarmonyApp extends JFrame{
     Robot r = null;
     
     UDPThread recvThread;
+    HeartBeatThread hbThread;
     MouseThread mThread;
     class HarmonyWindowCloseListener implements WindowListener {
 
@@ -781,7 +828,11 @@ public class HarmonyApp extends JFrame{
             yMoved = 0;
             String currentIP = currentPC.pc_ip;
             boolean didSwitch = false;
-            if (i == 1 && currentPC.up!=null)
+            if(i==-1) {
+            	didSwitch = true;
+                currentPC = pcList.get(0);
+            }
+            else if (i == 1 && currentPC.up!=null)
             {
                 didSwitch = true;
                 currentPC = currentPC.up;
@@ -1017,6 +1068,7 @@ public class HarmonyApp extends JFrame{
             if (currentPC == null)
             {
                 currentPC = pcList.get(pcList.size()-1);
+                currentPC.setHeartBeat();
             }
             ipList.remove(0);
             listModel.remove(2);
