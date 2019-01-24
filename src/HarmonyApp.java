@@ -368,6 +368,8 @@ public class HarmonyApp extends JFrame{
         this.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         this.setUndecorated(false);
         this.setVisible(true);
+        thisFrame.setState(framePreState);
+
     }
 	
 	private boolean stopMouseThread = false;
@@ -490,12 +492,13 @@ public class HarmonyApp extends JFrame{
 		}
 	}
 	
+	int framePreState = -1;
 	private boolean closeProgram = false;
 	class UDPThread extends Thread {
         UDPMessage msg;
 
         public void run() {
-        	int framePreState = -1;
+
             while(!closeProgram) {
             	msg = receiveMessage();
             	String clientMessage = msg.Content;
@@ -665,6 +668,8 @@ public class HarmonyApp extends JFrame{
 	private Point oldPos = null;
     private void server_BecomeSecondary()
     {
+        framePreState = thisFrame.getState();
+        thisFrame.setState(Frame.NORMAL);
     	this.setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
         isActivePC = false;
         this.dispose();
