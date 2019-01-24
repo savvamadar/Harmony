@@ -110,7 +110,8 @@ public class HarmonyApp extends JFrame{
 		    dsocket.send(outBoundPacket);
 		}
 		catch(Exception ex) {
-			JOptionPane.showMessageDialog(null,"Error: "+ex.toString());
+			System.out.println("Error: "+ex.toString());
+			//JOptionPane.showMessageDialog(null,"Error: "+ex.toString());
 		}
     }
 	
@@ -128,7 +129,8 @@ public class HarmonyApp extends JFrame{
 			}
 			return new UDPMessage(new String(inBoundPacket.getData()).trim(), ipToString, inBoundPacket.getPort());
 		}catch(Exception ex) {
-			JOptionPane.showMessageDialog(null,"Error: "+ex.toString());
+			System.out.println("Error: "+ex.toString());
+			//JOptionPane.showMessageDialog(null,"Error: "+ex.toString());
 		}
 		return null;
 	}
@@ -212,6 +214,7 @@ public class HarmonyApp extends JFrame{
 			dsocket = new DatagramSocket(applicationPort);
 		} catch (SocketException ex) {
 			JOptionPane.showMessageDialog(null,"Error: "+ex.toString());
+			System.exit(0);
 		}
 		
 		isServer = false;
@@ -261,6 +264,7 @@ public class HarmonyApp extends JFrame{
 			dsocket = new DatagramSocket(applicationPort);
 		} catch (SocketException ex) {
 			JOptionPane.showMessageDialog(null,"Error: "+ex.toString());
+			System.exit(0);
 		}
 		
 		isServer = true;
@@ -507,7 +511,8 @@ public class HarmonyApp extends JFrame{
                 			try {
 								r = new Robot();
 							} catch (AWTException e) {
-								JOptionPane.showMessageDialog(null,e.toString());
+								JOptionPane.showMessageDialog(null,"Unable to simulate input: "+e.toString());
+								System.exit(0);
 							}
                 		}
                         String[] sep = clientMessage.split("\\|",-1);
@@ -696,7 +701,7 @@ public class HarmonyApp extends JFrame{
         	try {
 				r = new Robot();
 			} catch (AWTException e) {
-				JOptionPane.showMessageDialog(null,e.toString());
+				JOptionPane.showMessageDialog(null,"Unable to constrain mouse: "+e.toString());
 			}
         }
         
